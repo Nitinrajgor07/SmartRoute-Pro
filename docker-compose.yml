@@ -1,0 +1,105 @@
+# ==============================================================================
+# SmartRoute Pro — Multi-Container Docker Compose Topology
+# Containerized Cloud Infrastructure & Microservice Orchestration
+# ==============================================================================
+
+services:
+  # ----------------------------------------------------------------------------
+  # Data Persistence Tier: Managed PostgreSQL Database
+  # ----------------------------------------------------------------------------
+  db:
+    image: postgres:16-alpine
+    container_name: smartroute_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 5s
+    networks:
+      - smartroute_network
+
+  # ----------------------------------------------------------------------------
+  # Application Tier: Python Flask REST API with Gunicorn WSGI
+  # ----------------------------------------------------------------------------
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: smartroute_backend
+    restart: unless-stopped
+    environment:
+      FLASK_ENV: production
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
+      PORT: 5000
+      SECRET_KEY: ${SECRET_KEY}
+      CORS_ORIGINS: http://localhost:${FRONTEND_PORT:-8080},http://127.0.0.1:${FRONTEND_PORT:-8080}
+      BACKEND_PUBLIC_URL: http://localhost:${BACKEND_PORT:-5000}
+      FRONTEND_PUBLIC_URL: http://localhost:${FRONTEND_PORT:-8080}
+      HOSTING_PLATFORM: Docker Compose
+      JWT_SECRET_KEY: ${JWT_SECRET_KEY}
+      JWT_ACCESS_TOKEN_EXPIRES_MINUTES: 60
+      JWT_REFRESH_TOKEN_EXPIRES_DAYS: 30
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-admin@smartroute.pro}
+      INITIAL_ADMIN_PASSWORD: ${INITIAL_ADMIN_PASSWORD}
+      SMARTROUTE_API_KEY: ${SMARTROUTE_API_KEY}
+      SEED_ON_START: ${SEED_ON_START:-true}
+      SEED_DEMO_USERS: ${SEED_DEMO_USERS:-true}
+      DEMO_DISPATCHER_PASSWORD: ${DEMO_DISPATCHER_PASSWORD}
+      DEMO_VIEWER_PASSWORD: ${DEMO_VIEWER_PASSWORD}
+    ports:
+      - "${BACKEND_PORT:-5000}:5000"
+    depends_on:
+      db:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/api/health"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    networks:
+      - smartroute_network
+
+  # ----------------------------------------------------------------------------
+  # Presentation Tier: React/Vite SPA served by Production Nginx
+  # ----------------------------------------------------------------------------
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        VITE_API_BASE_URL: http://localhost:${BACKEND_PORT:-5000}
+    container_name: smartroute_frontend
+    restart: unless-stopped
+    ports:
+      - "${FRONTEND_PORT:-8080}:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "--spider", "http://localhost/"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 5s
+    networks:
+      - smartroute_network
+
+# ------------------------------------------------------------------------------
+# Persistent Storage Volumes & Virtual Networks
+# ------------------------------------------------------------------------------
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  smartroute_network:
+    driver: bridge
