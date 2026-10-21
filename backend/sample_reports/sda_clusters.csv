@@ -1,0 +1,8 @@
+Run ID,Location ID,Location Name,Latitude,Longitude,Cluster ID,Distance to Centroid (km),Run K,Run Inertia,Run Silhouette Score
+4,1,Central Depot (Origin),37.7749,'-122.4194,1,1.53,3,14.81,0.2815
+4,2,Zone 1: Tech Hub,37.785,'-122.41,1,0.57,3,14.81,0.2815
+4,3,Zone 2: Medical Center,37.744,'-122.42,2,2.05,3,14.81,0.2815
+4,4,Zone 3: Metro Mall,37.763,'-122.46,2,2.05,3,14.81,0.2815
+4,5,Zone 4: Research Park,37.792,'-122.401,1,1.13,3,14.81,0.2815
+4,6,Zone 5: Harbor Pier (Dest),37.777,'-122.388,1,1.57,3,14.81,0.2815
+4,7,Zone 6: North Outpost (Isolated Station),37.81,'-122.42,0,0.00,3,14.81,0.2815

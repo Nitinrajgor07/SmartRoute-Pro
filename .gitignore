@@ -1,0 +1,63 @@
+# Node & Frontend
+node_modules/
+dist/
+dist-ssr/
+*.local
+.npm
+.eslintcache
+.stylelintcache
+*.tsbuildinfo
+.oxlintrc.json
+test-results/
+playwright-report/
+
+# Python & Backend
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+ENV/
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Environment files & Local Databases
+.env
+.env.production
+.env.development
+instance/
+backend/instance/
+*.db
+*.sqlite3
+*.bak
+
+# Submission Archives
+SmartRoute-Pro-submission.zip
+*.zip
+
+# Operating System & IDEs
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+*.swp
+*.swo

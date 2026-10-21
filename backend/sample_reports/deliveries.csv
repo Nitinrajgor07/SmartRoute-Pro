@@ -1,0 +1,9 @@
+Tracking Number,Customer Name,Pickup Location,Destination Location,Delivery Date,Priority,Status,Distance (km)
+TRK-DEMO-902184,TechCorp Logistics Hub,Central Depot (Origin),Zone 1: Tech Hub,2026-10-16,Express,Delivered,6.20
+TRK-DEMO-902185,Apex Medical Supplies,Central Depot (Origin),Zone 2: Medical Center,2026-10-16,Urgent,In Transit,8.50
+TRK-DEMO-902186,Metro Superstore Central,Central Depot (Origin),Zone 3: Metro Mall,2026-10-16,Standard,In Transit,12.40
+TRK-DEMO-902187,Horizon Robotics Lab,Central Depot (Origin),Zone 4: Research Park,2026-10-16,Express,Pending,5.10
+TRK-DEMO-902188,Blue Harbor Imports,Central Depot (Origin),Zone 5: Harbor Pier (Dest),2026-10-16,Standard,Delayed,14.80
+TRK-DEMO-902189,Greenleaf Bio Pharma,Central Depot (Origin),Zone 1: Tech Hub,2026-10-16,Urgent,Delivered,7.30
+TRK-DEMO-902190,OmniRetail Distribution,Central Depot (Origin),Zone 2: Medical Center,2026-10-16,Standard,Pending,18.20
+TRK-DEMO-902191,Starlight Electronics,Central Depot (Origin),Zone 4: Research Park,2026-10-16,Express,In Transit,4.50

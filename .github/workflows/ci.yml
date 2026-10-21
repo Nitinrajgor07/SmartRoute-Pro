@@ -1,0 +1,119 @@
+name: SmartRoute Pro CI/CD Pipeline
+
+on:
+  push:
+    branches: [ master, main ]
+  pull_request:
+    branches: [ master, main ]
+
+jobs:
+  # ============================================================================
+  # Job 1: Backend Testing & Code Integrity Verification
+  # ============================================================================
+  backend-test:
+    name: Backend Test Suite (Pytest & Python 3.11)
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: backend
+
+    steps:
+      - name: 1. Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: 2. Set up Python 3.11 Runtime
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+          cache: 'pip'
+
+      - name: 3. Install Backend Dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: 4. Run Pytest Automated Verification (ADA, SDA, Core Logistics & Cloud)
+        run: |
+          python -m pytest -v --color=yes
+
+  # ============================================================================
+  # Job 2: Frontend Compilation & Production Build Verification
+  # ============================================================================
+  frontend-build:
+    name: Frontend Typecheck & Production Build (Node 20)
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: frontend
+
+    steps:
+      - name: 1. Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: 2. Set up Node.js 20 Runtime
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: 3. Install Frontend Dependencies (npm ci)
+        run: npm ci
+
+      - name: 4. Run TypeScript Compilation (tsc -b)
+        run: npx tsc -b
+
+      - name: 5. Run Vite Production Build
+        run: npm run build
+        env:
+          VITE_API_BASE_URL: https://smartroute-pro-api.onrender.com
+
+  # ============================================================================
+  # Job 3: Docker Compose Integration & End-to-End Smoke Test
+  # ============================================================================
+  docker-integration:
+    name: Docker Compose PostgreSQL Integration & Smoke Test
+    runs-on: ubuntu-latest
+    needs: [backend-test, frontend-build]
+
+    steps:
+      - name: 1. Checkout Repository
+        uses: actions/checkout@v4
+
+      - name: 2. Set up Python 3.11 for Smoke Test
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: 3. Create .env from .env.example with Test Values
+        run: |
+          cp .env.example .env
+          sed -i 's/POSTGRES_PASSWORD=change-me/POSTGRES_PASSWORD=ci_test_postgres_pw_2026/' .env
+          sed -i 's/SECRET_KEY=change-me/SECRET_KEY=ci_test_secret_key_2026/' .env
+          sed -i 's/JWT_SECRET_KEY=change-me/JWT_SECRET_KEY=ci_test_jwt_secret_key_2026/' .env
+          sed -i 's/INITIAL_ADMIN_PASSWORD=change-me/INITIAL_ADMIN_PASSWORD=CiAdminTestSecret987!/' .env
+          sed -i 's/DEMO_DISPATCHER_PASSWORD=change-me/DEMO_DISPATCHER_PASSWORD=CiDispatchTestSecret987!/' .env
+          sed -i 's/DEMO_VIEWER_PASSWORD=change-me/DEMO_VIEWER_PASSWORD=CiViewerTestSecret987!/' .env
+          sed -i 's/SMARTROUTE_API_KEY=change-me/SMARTROUTE_API_KEY=ci-test-key-2026/' .env
+
+      - name: 4. Build Docker Compose Images
+        run: docker compose build
+
+      - name: 5. Start Container Stack with PostgreSQL and Wait for Healthy
+        run: docker compose up -d --wait
+
+      - name: 6. Execute Automated Smoke Test
+        run: python scripts/smoke_test.py
+        env:
+          INITIAL_ADMIN_PASSWORD: CiAdminTestSecret987!
+          DEMO_DISPATCHER_PASSWORD: CiDispatchTestSecret987!
+
+      - name: 7. Dump Container Logs on Failure
+        if: failure()
+        run: docker compose logs
+
+      - name: 8. Tear Down Container Stack and Volumes
+        if: always()
+        run: docker compose down -v
