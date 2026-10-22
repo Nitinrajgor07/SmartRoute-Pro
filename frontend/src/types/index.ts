@@ -28,6 +28,7 @@ export interface Delivery {
   lng: number;
   packageWeightKg: number;
   package_weight_kg?: number;
+  price?: number | null;
   status: DeliveryStatus;
   priority: DeliveryPriority;
   distanceKm: number;
@@ -69,10 +70,20 @@ export interface DashboardSummaryResponse {
     total_clustering_runs?: number;
     latest_k?: number | null;
     latest_silhouette_score?: number | null;
+    delivered_today?: number;
     revenue?: {
       today: number;
       week: number;
       month: number;
+      all_time?: number;
+      delivered_parcels?: {
+        today: number;
+        week: number;
+        month: number;
+        all_time: number;
+      };
+      awaiting_delivery?: number;
+      currency?: string;
     };
   };
   status_distribution: {
@@ -759,4 +770,45 @@ export interface ManagedUser extends AuthUser {
 export interface UserListResponse {
   users: ManagedUser[];
   total: number;
+}
+
+export interface DashboardRevenueResponse {
+  today: number;
+  week: number;
+  month: number;
+  all_time: number;
+  delivered_parcels: {
+    today: number;
+    week: number;
+    month: number;
+    all_time: number;
+  };
+  awaiting_delivery: number;
+  currency: string;
+  timestamp: string;
+}
+
+export interface RevenueBreakdownDailyItem {
+  date: string;
+  revenue: number;
+  parcels: number;
+}
+
+export interface RevenueBreakdownPriorityItem {
+  priority: string;
+  parcels: number;
+  revenue: number;
+  average_per_parcel: number;
+}
+
+export interface RevenueBreakdownResponse {
+  days: number;
+  currency: string;
+  daily: RevenueBreakdownDailyItem[];
+  by_priority: RevenueBreakdownPriorityItem[];
+  totals: {
+    parcels: number;
+    revenue: number;
+    average_per_parcel: number;
+  };
 }

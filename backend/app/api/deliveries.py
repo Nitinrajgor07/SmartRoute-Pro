@@ -202,6 +202,8 @@ def create_delivery():
     else:
         distance_km = float(distance_km)
 
+    delivered_at = datetime.datetime.now(datetime.timezone.utc) if status == 'Delivered' else None
+
     try:
         delivery = Delivery(
             tracking_number=tracking_number,
@@ -216,7 +218,8 @@ def create_delivery():
             price=calculate_parcel_price(float(package_weight_kg), priority),
             estimated_delivery_time=estimated_delivery_time,
             assigned_driver=assigned_driver,
-            customer_email=customer_email
+            customer_email=customer_email,
+            delivered_at=delivered_at
         )
         db.session.add(delivery)
         db.session.commit()
@@ -247,6 +250,7 @@ def update_delivery(id):
         }), 404
 
     data = request.get_json() or {}
+    weight_or_priority_changed = False
 
     # Check status update
     if 'status' in data:
@@ -260,6 +264,12 @@ def update_delivery(id):
             }), 400
         delivery.status = status
 
+        if status == 'Delivered':
+            if not delivery.delivered_at:
+                delivery.delivered_at = datetime.datetime.now(datetime.timezone.utc)
+        else:
+            delivery.delivered_at = None
+
     # Check priority update
     if 'priority' in data:
         priority = data['priority']
@@ -270,7 +280,9 @@ def update_delivery(id):
                 "message": f"Invalid priority '{priority}'. Allowed: {valid_priorities}",
                 "status_code": 400
             }), 400
-        delivery.priority = priority
+        if delivery.priority != priority:
+            delivery.priority = priority
+            weight_or_priority_changed = True
 
     if 'customer_name' in data or 'recipientName' in data:
         name = (data.get('customer_name') or data.get('recipientName') or '').strip()
@@ -308,7 +320,10 @@ def update_delivery(id):
 
     if 'package_weight_kg' in data or 'packageWeightKg' in data:
         try:
-            delivery.package_weight_kg = float(data.get('package_weight_kg') or data.get('packageWeightKg'))
+            new_weight = float(data.get('package_weight_kg') or data.get('packageWeightKg'))
+            if delivery.package_weight_kg != new_weight:
+                delivery.package_weight_kg = new_weight
+                weight_or_priority_changed = True
         except (ValueError, TypeError):
             pass
 
@@ -317,6 +332,9 @@ def update_delivery(id):
             delivery.distance_km = float(data.get('distance_km') or data.get('distanceKm'))
         except (ValueError, TypeError):
             pass
+
+    if weight_or_priority_changed and delivery.status != 'Delivered':
+        delivery.price = calculate_parcel_price(delivery.package_weight_kg, delivery.priority)
 
     try:
         db.session.commit()

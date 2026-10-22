@@ -310,6 +310,23 @@ def create_app(config_name=None):
                 db.session.commit()
                 click.echo(f"[+] Successfully created new ADMIN account: {email}")
 
+    @application.cli.command("backfill-prices")
+    def backfill_prices_cmd():
+        """Set price for deliveries where price is NULL based on weight and priority."""
+        from .models import Delivery
+        from .services.pricing import calculate_parcel_price
+        with application.app_context():
+            unpriced = Delivery.query.filter(Delivery.price.is_(None)).all()
+            changed = 0
+            for delivery in unpriced:
+                calculated = calculate_parcel_price(delivery.package_weight_kg, delivery.priority)
+                if calculated is not None:
+                    delivery.price = calculated
+                    changed += 1
+            if changed > 0:
+                db.session.commit()
+            click.echo(f"[+] Backfilled prices for {changed} deliveries.")
+
     @application.cli.command("seed-demo")
     def seed_demo_cmd():
         """Manually seed standard evaluation demo accounts."""

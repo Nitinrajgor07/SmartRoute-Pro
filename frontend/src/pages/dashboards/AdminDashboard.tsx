@@ -27,6 +27,7 @@ import {
 import { PageHeader } from '../../components/PageHeader';
 import { StatCard } from '../../components/cards/StatCard';
 import { SectionCard } from '../../components/cards/SectionCard';
+import { formatINR } from '../../utils/formatINR';
 import { LoadingState } from '../../components/StateFeedback';
 import { dashboardService, authService, cloudService } from '../../services/api';
 import type { DashboardSummaryResponse, ManagedUser, CloudHealthProbeResponse } from '../../types';
@@ -225,11 +226,39 @@ export const AdminDashboard: React.FC = () => {
       </div>
 
       <SectionCard title="Revenue">
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <StatCard label="Today's Revenue" value={`₹${(summary?.metrics?.revenue?.today ?? 0).toFixed(2)}`} hint="Current calendar day" icon={CheckCircle2} accent="emerald" />
-          <StatCard label="This Week's Revenue" value={`₹${(summary?.metrics?.revenue?.week ?? 0).toFixed(2)}`} hint="Monday through Sunday" icon={CheckCircle2} accent="blue" />
-          <StatCard label="This Month's Revenue" value={`₹${(summary?.metrics?.revenue?.month ?? 0).toFixed(2)}`} hint="Current calendar month" icon={CheckCircle2} accent="indigo" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+          <StatCard
+            label="Today"
+            value={formatINR(summary?.metrics?.revenue?.today)}
+            hint="Delivered parcels"
+            icon={CheckCircle2}
+            accent="emerald"
+          />
+          <StatCard
+            label="This week"
+            value={formatINR(summary?.metrics?.revenue?.week)}
+            hint="Delivered parcels"
+            icon={CheckCircle2}
+            accent="blue"
+          />
+          <StatCard
+            label="This month"
+            value={formatINR(summary?.metrics?.revenue?.month)}
+            hint="Delivered parcels"
+            icon={CheckCircle2}
+            accent="indigo"
+          />
+          <StatCard
+            label="All time"
+            value={formatINR(summary?.metrics?.revenue?.all_time)}
+            hint="Delivered parcels"
+            icon={CheckCircle2}
+            accent="indigo"
+          />
         </div>
+        <p className="text-xs text-slate-500 dark:text-slate-400 mt-3 font-medium">
+          Awaiting delivery: {formatINR(summary?.metrics?.revenue?.awaiting_delivery)}
+        </p>
       </SectionCard>
 
       {/* Charts Grid */}

@@ -261,7 +261,8 @@ class ReportingService:
             "Delivery Date",
             "Priority",
             "Status",
-            "Distance (km)"
+            "Distance (km)",
+            "Price (INR)"
         ])
 
         for d in deliveries:
@@ -269,6 +270,7 @@ class ReportingService:
             dest_name = d.destination_location.name if d.destination_location else f"Loc #{d.destination_location_id}"
             date_str = d.delivery_date.strftime("%Y-%m-%d") if d.delivery_date else ""
             
+            price_str = f"{d.price:.2f}" if d.price is not None else ""
             writer.writerow([
                 sanitize_csv_cell(d.tracking_number),
                 sanitize_csv_cell(d.customer_name),
@@ -277,8 +279,24 @@ class ReportingService:
                 sanitize_csv_cell(date_str),
                 sanitize_csv_cell(d.priority),
                 sanitize_csv_cell(d.status),
-                sanitize_csv_cell(f"{d.distance_km:.2f}" if d.distance_km is not None else "")
+                sanitize_csv_cell(f"{d.distance_km:.2f}" if d.distance_km is not None else ""),
+                sanitize_csv_cell(price_str)
             ])
+
+        total_delivered_rev = sum(
+            d.price for d in deliveries if d.status == 'Delivered' and d.price is not None
+        )
+        writer.writerow([
+            sanitize_csv_cell("Total Delivered Revenue"),
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            "",
+            sanitize_csv_cell(f"{total_delivered_rev:.2f}")
+        ])
 
         return output.getvalue().encode('utf-8')
 
@@ -369,12 +387,14 @@ class ReportingService:
                 Paragraph("Destination", styles['TableHeader']),
                 Paragraph("Priority", styles['TableHeader']),
                 Paragraph("Status", styles['TableHeader']),
-                Paragraph("Distance", styles['TableHeader'])
+                Paragraph("Distance", styles['TableHeader']),
+                Paragraph("Price (INR)", styles['TableHeader'])
             ]]
             for d in deliveries:
                 p_name = d.pickup_location.name if d.pickup_location else f"Loc #{d.pickup_location_id}"
                 dst_name = d.destination_location.name if d.destination_location else f"Loc #{d.destination_location_id}"
                 dist_str = f"{d.distance_km:.1f} km" if d.distance_km is not None else "—"
+                price_str = f"₹{d.price:.2f}" if d.price is not None else "—"
                 table_rows.append([
                     Paragraph(d.tracking_number, styles['TableCellBold']),
                     Paragraph(d.customer_name[:18], styles['TableCell']),
@@ -382,16 +402,31 @@ class ReportingService:
                     Paragraph(dst_name[:16], styles['TableCell']),
                     Paragraph(d.priority, styles['TableCell']),
                     Paragraph(d.status, styles['TableCellBold']),
-                    Paragraph(dist_str, styles['TableCell'])
+                    Paragraph(dist_str, styles['TableCell']),
+                    Paragraph(price_str, styles['TableCell'])
                 ])
 
-            del_table = Table(table_rows, colWidths=[85, 90, 85, 95, 55, 65, 48], repeatRows=1)
+            tot_deliv_rev = sum(d.price for d in deliveries if d.status == 'Delivered' and d.price is not None)
+            table_rows.append([
+                Paragraph("<b>Total Delivered</b>", styles['TableCellBold']),
+                Paragraph("", styles['TableCell']),
+                Paragraph("", styles['TableCell']),
+                Paragraph("", styles['TableCell']),
+                Paragraph("", styles['TableCell']),
+                Paragraph("", styles['TableCell']),
+                Paragraph("", styles['TableCell']),
+                Paragraph(f"<b>₹{tot_deliv_rev:.2f}</b>", styles['TableCellBold'])
+            ])
+
+            del_table = Table(table_rows, colWidths=[72, 75, 70, 75, 45, 58, 48, 80], repeatRows=1)
             del_table.setStyle(TableStyle([
                 ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#1e293b")),
                 ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
-                ('ROWBACKGROUNDS', (0, 1), (-1, -1), [colors.white, colors.HexColor("#f8fafc")]),
+                ('ROWBACKGROUNDS', (0, 1), (-1, -2), [colors.white, colors.HexColor("#f8fafc")]),
+                ('BACKGROUND', (0, -1), (-1, -1), colors.HexColor("#f1f5f9")),
                 ('BOX', (0, 0), (-1, -1), 1, colors.HexColor("#cbd5e1")),
                 ('INNERGRID', (0, 0), (-1, -1), 0.5, colors.HexColor("#e2e8f0")),
+                ('LINEABOVE', (0, -1), (-1, -1), 1.5, colors.HexColor("#1e293b")),
                 ('TOPPADDING', (0, 0), (-1, -1), 4),
                 ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
             ]))
@@ -830,6 +865,65 @@ class ReportingService:
             ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
         ]))
         story.append(t_tests)
+
+        # 4. Operational Revenue Summary (Delivered Parcels)
+        story.append(Spacer(1, 10))
+        story.append(Paragraph("4. Operational Revenue Summary (Delivered Parcels)", styles['SectionHeader']))
+
+        delivered_with_price = [d for d in delivs if d.status == 'Delivered' and d.price is not None]
+        prio_stats = {
+            "Urgent": {"count": 0, "rev": 0.0},
+            "Express": {"count": 0, "rev": 0.0},
+            "Standard": {"count": 0, "rev": 0.0}
+        }
+        for d in delivered_with_price:
+            p = d.priority if d.priority in prio_stats else "Standard"
+            prio_stats[p]["count"] += 1
+            prio_stats[p]["rev"] += float(d.price)
+
+        rev_rows = [
+            [
+                Paragraph("<b>Priority Speed</b>", styles['TableHeader']),
+                Paragraph("<b>Delivered Parcels</b>", styles['TableHeader']),
+                Paragraph("<b>Total Revenue (INR)</b>", styles['TableHeader']),
+                Paragraph("<b>Average per Parcel (INR)</b>", styles['TableHeader'])
+            ]
+        ]
+        tot_cnt = sum(v["count"] for v in prio_stats.values())
+        tot_rev = sum(v["rev"] for v in prio_stats.values())
+
+        for p in ["Urgent", "Express", "Standard"]:
+            cnt = prio_stats[p]["count"]
+            rev = prio_stats[p]["rev"]
+            avg = (rev / cnt) if cnt > 0 else 0.0
+            rev_rows.append([
+                Paragraph(p, styles['TableCellBold']),
+                Paragraph(str(cnt), styles['TableCell']),
+                Paragraph(f"₹{rev:.2f}", styles['TableCell']),
+                Paragraph(f"₹{avg:.2f}", styles['TableCell'])
+            ])
+
+        tot_avg = (tot_rev / tot_cnt) if tot_cnt > 0 else 0.0
+        rev_rows.append([
+            Paragraph("<b>Total Delivered</b>", styles['TableCellBold']),
+            Paragraph(f"<b>{tot_cnt}</b>", styles['TableCellBold']),
+            Paragraph(f"<b>₹{tot_rev:.2f}</b>", styles['TableCellBold']),
+            Paragraph(f"<b>₹{tot_avg:.2f}</b>", styles['TableCellBold'])
+        ])
+
+        t_rev = Table(rev_rows, colWidths=[130, 130, 132, 132])
+        t_rev.setStyle(TableStyle([
+            ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor("#1e293b")),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+            ('ROWBACKGROUNDS', (0, 1), (-1, -2), [colors.white, colors.HexColor("#f8fafc")]),
+            ('BACKGROUND', (0, -1), (-1, -1), colors.HexColor("#f1f5f9")),
+            ('BOX', (0, 0), (-1, -1), 1, colors.HexColor("#cbd5e1")),
+            ('INNERGRID', (0, 0), (-1, -1), 0.5, colors.HexColor("#e2e8f0")),
+            ('LINEABOVE', (0, -1), (-1, -1), 1.5, colors.HexColor("#1e293b")),
+            ('TOPPADDING', (0, 0), (-1, -1), 4),
+            ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+        ]))
+        story.append(t_rev)
 
         # Statistical Caution
         story.append(Paragraph(

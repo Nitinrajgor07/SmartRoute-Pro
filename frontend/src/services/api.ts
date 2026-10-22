@@ -4,6 +4,8 @@ import type {
   Delivery,
   DeliveriesListResponse,
   DashboardSummaryResponse,
+  DashboardRevenueResponse,
+  RevenueBreakdownResponse,
   LocationItem,
   GraphTopologyResponse,
   ShortestPathRequest,
@@ -277,6 +279,24 @@ export const dashboardService = {
    */
   async getRecentDeliveries(): Promise<{ deliveries: Delivery[]; count: number }> {
     const response = await apiClient.get<{ deliveries: Delivery[]; count: number }>('/api/dashboard/recent-deliveries');
+    return response.data;
+  },
+
+  /**
+   * Fetch revenue periods
+   */
+  async getRevenue(): Promise<DashboardRevenueResponse> {
+    const response = await apiClient.get<DashboardRevenueResponse>('/api/dashboard/revenue');
+    return response.data;
+  },
+
+  /**
+   * Fetch revenue breakdown by day and priority
+   */
+  async getRevenueBreakdown(days: number = 30): Promise<RevenueBreakdownResponse> {
+    const response = await apiClient.get<RevenueBreakdownResponse>('/api/dashboard/revenue/breakdown', {
+      params: { days }
+    });
     return response.data;
   }
 };
@@ -625,7 +645,7 @@ export interface BookParcelPayload {
   pickup_location_id: number;
   destination_location_id: number;
   package_weight_kg: number;
-  priority: 'Standard' | 'Express';
+  priority: 'Standard' | 'Express' | 'Urgent';
   recipient_name?: string;
 }
 

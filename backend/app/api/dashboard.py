@@ -1,57 +1,43 @@
 import datetime
-from zoneinfo import ZoneInfo
-from flask import Blueprint, jsonify, current_app
+from flask import Blueprint, jsonify, current_app, request
 from sqlalchemy import func
 from app.extensions import db
 from flask_jwt_extended import get_jwt_identity
 from app.models import Delivery, RouteRun, ClusterRun, User
 from app.utils.permissions import permission_required
+from app.utils.timezone import get_app_timezone
+from app.services.revenue import calculate_revenue_periods, calculate_revenue_breakdown
 
 dashboard_bp = Blueprint('dashboard', __name__, url_prefix='/dashboard')
 
 
 def _revenue_periods():
     """Calculate saved-price revenue using calendar boundaries in the app timezone."""
-    timezone = ZoneInfo(current_app.config.get('APP_TIMEZONE', 'UTC'))
-    now = datetime.datetime.now(datetime.timezone.utc).astimezone(timezone)
-    today = now.date()
-    week_start = today - datetime.timedelta(days=today.weekday())
-    month_start = today.replace(day=1)
-    if month_start.month == 12:
-        next_month = month_start.replace(year=month_start.year + 1, month=1)
-    else:
-        next_month = month_start.replace(month=month_start.month + 1)
-
-    start_today = datetime.datetime.combine(today, datetime.time.min, tzinfo=timezone).astimezone(datetime.timezone.utc).replace(tzinfo=None)
-    start_week = datetime.datetime.combine(week_start, datetime.time.min, tzinfo=timezone).astimezone(datetime.timezone.utc).replace(tzinfo=None)
-    start_month = datetime.datetime.combine(month_start, datetime.time.min, tzinfo=timezone).astimezone(datetime.timezone.utc).replace(tzinfo=None)
-    end_today = datetime.datetime.combine(today + datetime.timedelta(days=1), datetime.time.min, tzinfo=timezone).astimezone(datetime.timezone.utc).replace(tzinfo=None)
-    end_week = datetime.datetime.combine(week_start + datetime.timedelta(days=7), datetime.time.min, tzinfo=timezone).astimezone(datetime.timezone.utc).replace(tzinfo=None)
-    end_month = datetime.datetime.combine(next_month, datetime.time.min, tzinfo=timezone).astimezone(datetime.timezone.utc).replace(tzinfo=None)
-
-    parcels = (
+    delivered = (
         Delivery.query
-        .filter(Delivery.price.isnot(None), Delivery.status != 'Cancelled')
+        .filter(Delivery.status == 'Delivered', Delivery.price.isnot(None))
         .order_by(Delivery.id.asc())
         .all()
     )
-    unique_parcels = {parcel.id: parcel for parcel in parcels}.values()
+    awaiting = (
+        Delivery.query
+        .filter(Delivery.status.in_(['Pending', 'In Transit', 'Delayed']), Delivery.price.isnot(None))
+        .order_by(Delivery.id.asc())
+        .all()
+    )
 
-    def total_between(start, end):
-        return round(sum(
-            float(parcel.price)
-            for parcel in unique_parcels
-            if parcel.created_at and start <= (
-                parcel.created_at.astimezone(datetime.timezone.utc).replace(tzinfo=None)
-                if parcel.created_at.tzinfo else parcel.created_at
-            ) < end
-        ), 2)
+    delivered_rows = [
+        {"price": p.price, "delivered_at": p.delivered_at, "priority": p.priority}
+        for p in delivered
+    ]
+    awaiting_rows = [
+        {"price": p.price}
+        for p in awaiting
+    ]
 
-    return {
-        "today": total_between(start_today, end_today),
-        "week": total_between(start_week, end_week),
-        "month": total_between(start_month, end_month),
-    }
+    tz = get_app_timezone(current_app.config.get('APP_TIMEZONE', 'Asia/Kolkata'))
+    now_app = datetime.datetime.now(datetime.timezone.utc).astimezone(tz)
+    return calculate_revenue_periods(delivered_rows, awaiting_rows, now_app, tz)
 
 
 @dashboard_bp.route('/summary', methods=['GET'])
@@ -192,6 +178,7 @@ def get_dashboard_summary():
             "delayed_deliveries": delayed_deliveries,
             "in_transit_deliveries": in_transit_deliveries,
             "pending_deliveries": pending_deliveries,
+            "delivered_today": revenue["delivered_parcels"]["today"],
             "avg_distance_km": avg_distance_km,
             "on_time_rate": on_time_rate,
             "has_sufficient_data": total_deliveries > 0,
@@ -220,9 +207,50 @@ def get_dashboard_revenue():
         "today": revenue["today"],
         "week": revenue["week"],
         "month": revenue["month"],
+        "all_time": revenue["all_time"],
+        "delivered_parcels": revenue["delivered_parcels"],
+        "awaiting_delivery": revenue["awaiting_delivery"],
         "currency": "INR",
         "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat(),
     }), 200
+
+
+@dashboard_bp.route('/revenue/breakdown', methods=['GET'])
+@permission_required('dashboard:revenue')
+def get_revenue_breakdown():
+    """Return revenue breakdown per day and by priority for the last N days."""
+    days_raw = request.args.get('days', '30')
+    try:
+        days = int(days_raw)
+        if days < 7 or days > 90:
+            return jsonify({
+                "error": "Bad Request",
+                "message": "Parameter 'days' must be an integer between 7 and 90.",
+                "status_code": 400
+            }), 400
+    except (ValueError, TypeError):
+        return jsonify({
+            "error": "Bad Request",
+            "message": "Parameter 'days' must be an integer between 7 and 90.",
+            "status_code": 400
+        }), 400
+
+    delivered = (
+        Delivery.query
+        .filter(Delivery.status == 'Delivered', Delivery.price.isnot(None))
+        .order_by(Delivery.id.asc())
+        .all()
+    )
+    delivered_rows = [
+        {"price": p.price, "delivered_at": p.delivered_at, "priority": p.priority}
+        for p in delivered
+    ]
+
+    tz = get_app_timezone(current_app.config.get('APP_TIMEZONE', 'Asia/Kolkata'))
+    today_date = datetime.datetime.now(datetime.timezone.utc).astimezone(tz).date()
+
+    breakdown = calculate_revenue_breakdown(delivered_rows, days, today_date, tz)
+    return jsonify(breakdown), 200
 
 
 @dashboard_bp.route('/recent-deliveries', methods=['GET'])

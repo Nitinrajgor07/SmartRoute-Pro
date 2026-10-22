@@ -20,7 +20,9 @@ The Dispatcher manages delivery consignments, plans shortest routes, optimizes m
 ### Step 1: Sign in as Dispatcher
 1. On the login page, click the **Dispatcher** demo button.
 2. Click **Sign in**.
-3. Expected view: Redirects to `/` (Dispatcher Operations Dashboard). Review the delivery metrics and quick shortcuts.
+3. Expected view: Redirects to `/` (Dispatcher Operations Dashboard). Review the delivery metrics and the Revenue cards (Today, This week, This month, All time).
+   Revenue measures earned income exclusively from delivered consignments (priced at Standard ₹50, Express ₹75, Urgent ₹100 per kg).
+   Undelivered parcels (Pending, In Transit, Delayed) are tracked separately as Awaiting Delivery.
 
 ### Step 2: Consignment Management
 1. Click **Deliveries** in the left sidebar navigation (`/deliveries`).

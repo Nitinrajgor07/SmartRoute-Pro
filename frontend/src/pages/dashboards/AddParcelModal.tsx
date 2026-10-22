@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { X, Package, Loader2, AlertCircle } from 'lucide-react';
 import { myService } from '../../services/api';
+import { formatINR } from '../../utils/formatINR';
 import type { BookingHub, BookParcelPayload } from '../../services/api';
 
 interface AddParcelModalProps {
@@ -24,7 +25,7 @@ export const AddParcelModal: React.FC<AddParcelModalProps> = ({ open, defaultRec
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const parsedWeight = Number(weight);
-  const rate = priority === 'Express' ? 75 : priority === 'Standard' ? 50 : null;
+  const rate = priority === 'Urgent' ? 100 : priority === 'Express' ? 75 : priority === 'Standard' ? 50 : null;
   const estimatedPrice = Number.isFinite(parsedWeight) && parsedWeight > 0 && rate !== null
     ? parsedWeight * rate
     : null;
@@ -60,7 +61,7 @@ export const AddParcelModal: React.FC<AddParcelModalProps> = ({ open, defaultRec
       setError('Weight must be between 0.1 and 50 kg.');
       return;
     }
-    if (priority !== 'Standard' && priority !== 'Express') {
+    if (priority !== 'Standard' && priority !== 'Express' && priority !== 'Urgent') {
       setError('Please choose a valid parcel speed.');
       return;
     }
@@ -192,6 +193,7 @@ export const AddParcelModal: React.FC<AddParcelModalProps> = ({ open, defaultRec
               >
                 <option value="Standard">Standard</option>
                 <option value="Express">Express</option>
+                <option value="Urgent">Urgent</option>
               </select>
             </label>
           </div>
@@ -201,11 +203,11 @@ export const AddParcelModal: React.FC<AddParcelModalProps> = ({ open, defaultRec
           <div className="flex items-center justify-between gap-3">
             <span className="text-xs font-semibold text-slate-700 dark:text-slate-300">Estimated price</span>
             <span className="text-base font-bold text-brand-700 dark:text-brand-300" data-testid="parcel-estimated-price">
-              {estimatedPrice === null ? 'Enter a valid weight' : `₹${estimatedPrice.toFixed(2)}`}
+              {estimatedPrice === null ? 'Enter a valid weight' : formatINR(estimatedPrice)}
             </span>
           </div>
           <p className="mt-1 text-[11px] text-slate-500 dark:text-slate-400">
-            {priority} rate: ₹{rate?.toFixed(2)} per kg. Final price is verified when booked.
+            {priority} rate: {formatINR(rate)} per kg. Final price is verified when booked.
           </p>
         </div>
 

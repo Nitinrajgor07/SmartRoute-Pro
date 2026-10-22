@@ -5,6 +5,7 @@ import json
 from app import create_app
 from app.extensions import db
 from app.models import Location, Road, Delivery, User, ClusterRun, ClusterAssignment
+from app.services.pricing import calculate_parcel_price
 
 def seed_database(app=None):
     """
@@ -715,6 +716,7 @@ def seed_database(app=None):
                 customer_email = f"client_{(i % 12) + 1}@logistics-partner.com"
 
             existing = Delivery.query.filter_by(tracking_number=tracking_no).first()
+            price = calculate_parcel_price(weight, priority)
             if not existing:
                 delivery = Delivery(
                     tracking_number=tracking_no,
@@ -727,6 +729,7 @@ def seed_database(app=None):
                     status=status,
                     distance_km=dist,
                     package_weight_kg=weight,
+                    price=price,
                     estimated_delivery_time=time_slot,
                     assigned_driver=driver,
                     delivered_at=delivered_dt,
@@ -745,6 +748,7 @@ def seed_database(app=None):
                 existing.status = status
                 existing.distance_km = dist
                 existing.package_weight_kg = weight
+                existing.price = price
                 existing.estimated_delivery_time = time_slot
                 existing.assigned_driver = driver
                 existing.delivered_at = delivered_dt

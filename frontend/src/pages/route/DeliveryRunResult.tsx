@@ -15,6 +15,7 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { routesService } from '../../services/api';
+import { formatINR } from '../../utils/formatINR';
 import type { DeliveryRunResponse } from '../../types';
 
 interface DeliveryRunResultProps {
@@ -371,15 +372,15 @@ export const DeliveryRunResult: React.FC<DeliveryRunResultProps> = ({
         <div className="text-[11px] text-slate-700 dark:text-slate-300">
           <div>
             Fuel estimate: <span className="font-bold">{fuelLitres.toFixed(1)} L</span> ≈{' '}
-            <span className="font-bold">₹{Math.round(fuelCost)}</span>
+            <span className="font-bold">{formatINR(fuelCost)}</span>
             {hasSaving && (
               <>
-                {' '}· saves about <span className="font-bold text-emerald-700 dark:text-emerald-400">₹{Math.round(fuelSaved)}</span> on this trip
+                {' '}· saves about <span className="font-bold text-emerald-700 dark:text-emerald-400">{formatINR(fuelSaved)}</span> on this trip
               </>
             )}
           </div>
           <div className="text-[10px] text-slate-500 dark:text-slate-400 mt-0.5">
-            Assumes a diesel van at {VAN_KM_PER_LITRE} km/L and ₹{DIESEL_PRICE_PER_LITRE}/L.
+            Assumes a diesel van at {VAN_KM_PER_LITRE} km/L and {formatINR(DIESEL_PRICE_PER_LITRE)}/L.
           </div>
         </div>
       </div>

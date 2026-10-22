@@ -29,7 +29,12 @@ import {
 } from 'recharts';
 import { PageHeader } from '../components/PageHeader';
 import { HypothesisTests } from './analytics/HypothesisTests';
-import { sdaService } from '../services/api';
+import { sdaService, dashboardService } from '../services/api';
+import { useAuth } from '../app/AuthContext';
+import { SectionCard } from '../components/cards/SectionCard';
+import { LoadingState, ErrorState, EmptyState } from '../components/StateFeedback';
+import { formatINR } from '../utils/formatINR';
+import type { RevenueBreakdownResponse } from '../types';
 import type {
   StatisticalSummaryResponse,
   DistributionResponse,
@@ -66,6 +71,27 @@ export const StatisticalAnalytics: React.FC = () => {
   // Loading, Refresh & Error States
   const [isLoading, setIsLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Revenue Breakdown State (ADMIN & DISPATCHER)
+  const { can } = useAuth();
+  const canViewRevenue = can('dashboard:revenue');
+  const [revenueData, setRevenueData] = useState<RevenueBreakdownResponse | null>(null);
+  const [isRevenueLoading, setIsRevenueLoading] = useState<boolean>(false);
+  const [revenueError, setRevenueError] = useState<string | null>(null);
+
+  const fetchRevenue = async () => {
+    if (!canViewRevenue) return;
+    setIsRevenueLoading(true);
+    setRevenueError(null);
+    try {
+      const data = await dashboardService.getRevenueBreakdown(30);
+      setRevenueData(data);
+    } catch (err: any) {
+      setRevenueError(err.response?.data?.message || 'Failed to load revenue breakdown');
+    } finally {
+      setIsRevenueLoading(false);
+    }
+  };
 
   // Fetch all statistical datasets concurrently from backend
   const fetchAllStatistics = async () => {
@@ -115,6 +141,12 @@ export const StatisticalAnalytics: React.FC = () => {
   useEffect(() => {
     fetchAllStatistics();
   }, []);
+
+  useEffect(() => {
+    if (canViewRevenue) {
+      fetchRevenue();
+    }
+  }, [canViewRevenue]);
 
   // Compute Overview KPI Metrics from real database records
   const meanDist = statsSummary?.delivery_distances?.mean;
@@ -312,6 +344,140 @@ export const StatisticalAnalytics: React.FC = () => {
           </div>
         </div>
       </div>
+
+      {/* ------------------------------------------------------------------ */}
+      {/* REVENUE SECTION (ADMIN & DISPATCHER ONLY)                         */}
+      {/* ------------------------------------------------------------------ */}
+      {canViewRevenue && (
+        <SectionCard
+          title="Revenue (Last 30 Days)"
+          icon={TrendingUp}
+          action={
+            <button
+              onClick={fetchRevenue}
+              disabled={isRevenueLoading}
+              className="p-1.5 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors disabled:opacity-50 cursor-pointer"
+              title="Refresh revenue"
+            >
+              <RefreshCw className={`h-3.5 w-3.5 ${isRevenueLoading ? 'animate-spin' : ''}`} />
+            </button>
+          }
+        >
+          {isRevenueLoading ? (
+            <LoadingState message="Loading revenue analytics..." />
+          ) : revenueError ? (
+            <ErrorState
+              title="Failed to load revenue data"
+              message={revenueError}
+              onRetry={fetchRevenue}
+            />
+          ) : !revenueData || revenueData.totals.parcels === 0 ? (
+            <EmptyState
+              title="No delivered parcels in the last 30 days"
+              message="Revenue is recorded when parcels are successfully delivered."
+            />
+          ) : (
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+              {/* Daily Bar Chart (7 Cols) */}
+              <div className="lg:col-span-7 space-y-3">
+                <div className="flex items-center justify-between">
+                  <h4 className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                    Daily Delivered Revenue (INR)
+                  </h4>
+                  <span className="text-[11px] font-mono text-slate-500 dark:text-slate-400">
+                    Total: {formatINR(revenueData.totals.revenue)} ({revenueData.totals.parcels} parcels)
+                  </span>
+                </div>
+                <div className="h-64 w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart
+                      data={revenueData.daily}
+                      margin={{ top: 10, right: 10, left: -10, bottom: 0 }}
+                    >
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#E2E8F0" className="dark:stroke-slate-800" />
+                      <XAxis
+                        dataKey="date"
+                        tick={{ fontSize: 10 }}
+                        tickFormatter={(d: string) => d.slice(5)}
+                      />
+                      <YAxis
+                        tick={{ fontSize: 10 }}
+                        tickFormatter={(v: number) => `₹${v}`}
+                      />
+                      <Tooltip
+                        contentStyle={{
+                          backgroundColor: '#1E293B',
+                          color: '#fff',
+                          borderRadius: '8px',
+                          fontSize: '12px',
+                          border: 'none',
+                        }}
+                        formatter={(value: any, _name: any, item: any) => [
+                          `${formatINR(Number(value))} (${item.payload.parcels} parcels)`,
+                          'Revenue'
+                        ]}
+                        labelFormatter={(label) => `Date: ${label}`}
+                      />
+                      <Bar dataKey="revenue" name="Revenue" fill="#10B981" radius={[4, 4, 0, 0]} />
+                    </BarChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+
+              {/* Priority Table (5 Cols) */}
+              <div className="lg:col-span-5 space-y-3">
+                <h4 className="text-xs font-semibold text-slate-700 dark:text-slate-300">
+                  Revenue by Priority Speed
+                </h4>
+                <div className="overflow-x-auto rounded-xl border border-slate-200 dark:border-slate-800">
+                  <table className="w-full text-left text-xs">
+                    <thead className="bg-slate-50 dark:bg-slate-800/60 border-b border-slate-200 dark:border-slate-800 text-[10px] uppercase font-semibold text-slate-500 dark:text-slate-400">
+                      <tr>
+                        <th className="py-2.5 px-3">Priority</th>
+                        <th className="py-2.5 px-3 text-right">Parcels</th>
+                        <th className="py-2.5 px-3 text-right">Revenue</th>
+                        <th className="py-2.5 px-3 text-right">Avg / Parcel</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+                      {revenueData.by_priority.map((p) => (
+                        <tr key={p.priority} className="hover:bg-slate-50/50 dark:hover:bg-slate-800/40">
+                          <td className="py-2.5 px-3 font-medium text-slate-900 dark:text-white">
+                            {p.priority}
+                          </td>
+                          <td className="py-2.5 px-3 text-right font-mono text-slate-700 dark:text-slate-300">
+                            {p.parcels}
+                          </td>
+                          <td className="py-2.5 px-3 text-right font-mono text-emerald-600 dark:text-emerald-400 font-semibold">
+                            {formatINR(p.revenue)}
+                          </td>
+                          <td className="py-2.5 px-3 text-right font-mono text-slate-600 dark:text-slate-400">
+                            {formatINR(p.average_per_parcel)}
+                          </td>
+                        </tr>
+                      ))}
+                      <tr className="bg-slate-50 dark:bg-slate-800/80 font-semibold border-t-2 border-slate-200 dark:border-slate-700">
+                        <td className="py-2.5 px-3 text-slate-900 dark:text-white">
+                          Total
+                        </td>
+                        <td className="py-2.5 px-3 text-right font-mono text-slate-900 dark:text-white">
+                          {revenueData.totals.parcels}
+                        </td>
+                        <td className="py-2.5 px-3 text-right font-mono text-emerald-600 dark:text-emerald-400">
+                          {formatINR(revenueData.totals.revenue)}
+                        </td>
+                        <td className="py-2.5 px-3 text-right font-mono text-slate-900 dark:text-white">
+                          {formatINR(revenueData.totals.average_per_parcel)}
+                        </td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+            </div>
+          )}
+        </SectionCard>
+      )}
 
       {/* ------------------------------------------------------------------ */}
       {/* 4. DISTRIBUTION VISUALIZATION & FREQUENCY HISTOGRAMS               */}

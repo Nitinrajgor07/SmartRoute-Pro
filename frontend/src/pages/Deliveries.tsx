@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { PageHeader } from '../components/PageHeader';
 import { StatusBadge, PriorityBadge } from '../components/StatusBadge';
+import { formatINR } from '../utils/formatINR';
 import { EmptyState, LoadingState, ErrorState } from '../components/StateFeedback';
 import { PrimaryButton } from '../components/Buttons';
 import { deliveriesService, locationsService, dashboardService } from '../services/api';
@@ -669,6 +670,7 @@ export const Deliveries: React.FC = () => {
                     <th className="py-3.5 px-4">Status</th>
                     <th className="py-3.5 px-4">Priority</th>
                     <th className="py-3.5 px-4 hidden sm:table-cell">Metrics</th>
+                    <th className="py-3.5 px-4 hidden md:table-cell">Price</th>
                     <th className="py-3.5 px-4 hidden lg:table-cell">Carrier</th>
                     <th className="py-3.5 px-4 text-right w-36">Actions</th>
                   </tr>
@@ -765,6 +767,11 @@ export const Deliveries: React.FC = () => {
                           <div className="text-[10px] text-slate-400 mt-0.5">
                             {weightVal} kg consignment
                           </div>
+                        </td>
+
+                        {/* Price */}
+                        <td className="py-3 px-4 hidden md:table-cell whitespace-nowrap text-slate-800 dark:text-slate-200 font-medium">
+                          {del.price != null ? formatINR(del.price) : '-'}
                         </td>
 
                         {/* Carrier / Driver */}
@@ -1029,6 +1036,7 @@ export const Deliveries: React.FC = () => {
                 <div className="space-y-1 text-slate-700 dark:text-slate-300">
                   <div>Weight: <strong>{selectedDelivery.package_weight_kg || selectedDelivery.packageWeightKg || 1.0} kg</strong></div>
                   <div>Road Distance: <strong>{selectedDelivery.distance_km || selectedDelivery.distanceKm || 0} km</strong></div>
+                  <div>Price: <strong>{selectedDelivery.price != null ? formatINR(selectedDelivery.price) : '-'}</strong></div>
                 </div>
               </div>
 
