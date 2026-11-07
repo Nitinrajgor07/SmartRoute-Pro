@@ -38,17 +38,17 @@ Generated automatically from the Flask URL map and permission rules by `scripts/
 | PUT | `/api/locations/<int:id>` | `deliveries:write` | DISPATCHER |
 | GET | `/api/my/parcels` | `parcels:own` | VIEWER |
 | GET | `/api/my/parcels/<string:tracking_number>` | `parcels:own` | VIEWER |
-| GET | `/api/reports/ada.csv` | `reports:operational` | DISPATCHER |
-| GET | `/api/reports/ada.pdf` | `reports:operational` | DISPATCHER |
+| GET | `/api/reports/ada.csv` | `reports:operational` | ADMIN, DISPATCHER |
+| GET | `/api/reports/ada.pdf` | `reports:operational` | ADMIN, DISPATCHER |
 | GET | `/api/reports/cloud.pdf` | `reports:system` | ADMIN |
-| GET | `/api/reports/deliveries.csv` | `reports:operational` | DISPATCHER |
-| GET | `/api/reports/deliveries.pdf` | `reports:operational` | DISPATCHER |
+| GET | `/api/reports/deliveries.csv` | `reports:operational` | ADMIN, DISPATCHER |
+| GET | `/api/reports/deliveries.pdf` | `reports:operational` | ADMIN, DISPATCHER |
 | GET | `/api/reports/integrated.pdf` | `reports:system` | ADMIN |
 | GET | `/api/reports/my-parcels.csv` | `reports:my_parcels` | VIEWER |
 | GET | `/api/reports/my-parcels.pdf` | `reports:my_parcels` | VIEWER |
 | GET | `/api/reports/overview` | `reports:analytics` | ADMIN, DISPATCHER |
-| GET | `/api/reports/sda-clusters.csv` | `reports:operational` | DISPATCHER |
-| GET | `/api/reports/sda-clusters.pdf` | `reports:operational` | DISPATCHER |
+| GET | `/api/reports/sda-clusters.csv` | `reports:operational` | ADMIN, DISPATCHER |
+| GET | `/api/reports/sda-clusters.pdf` | `reports:operational` | ADMIN, DISPATCHER |
 | GET | `/api/reports/statistics.pdf` | `reports:analytics` | ADMIN, DISPATCHER |
 | GET | `/api/roads` | `Public` | Public (None) |
 | POST | `/api/routes/delivery-run` | `routes:calculate` | DISPATCHER |

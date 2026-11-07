@@ -151,7 +151,7 @@ The system maps all API endpoints and application actions to canonical permissio
 | `zones:run` | Execute K-Means spatial clustering runs across hubs | DISPATCHER |
 | `analytics:read` | Inspect statistical summaries, regressions, and hypothesis tests | ADMIN, DISPATCHER |
 | `reports:analytics` | Download statistical analytics PDF reports | ADMIN, DISPATCHER |
-| `reports:operational` | Download delivery, route, and territory operational PDF/CSV reports | DISPATCHER |
+| `reports:operational` | Download delivery, route, and territory operational PDF/CSV reports | ADMIN, DISPATCHER |
 | `reports:system` | Download full platform summary and cloud infrastructure PDF reports | ADMIN |
 | `system:read` | Access real-time system status, host metrics, and infrastructure health | ADMIN |
 | `users:manage` | List users, approve or reject registrations, and alter account roles | ADMIN |

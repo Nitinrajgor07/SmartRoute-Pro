@@ -103,8 +103,11 @@ class DescriptiveStatisticsEngine:
         """
         pairs = []
         for x, y in zip(x_values, y_values):
-            if x is not None and y is not None and not math.isnan(float(x)) and not math.isnan(float(y)):
-                pairs.append((float(x), float(y)))
+            if x is not None and y is not None:
+                x_float = float(x)
+                y_float = float(y)
+                if math.isfinite(x_float) and math.isfinite(y_float):
+                    pairs.append((x_float, y_float))
 
         n = len(pairs)
         if n < 3:

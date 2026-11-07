@@ -314,7 +314,7 @@ def test_18_unauthorized_clustering_execution(client, viewer_headers, admin_head
 def test_19_protected_report_downloads(client, viewer_headers, dispatcher_headers, admin_headers):
     """
     Ensure report downloads follow the canonical model:
-    - reports:operational -> DISPATCHER only (deliveries.pdf)
+    - reports:operational -> ADMIN, DISPATCHER (deliveries.pdf)
     - reports:system -> ADMIN only (cloud.pdf)
     - reports:my_parcels -> VIEWER only (my-parcels.pdf)
     - reports:analytics -> ADMIN, DISPATCHER (statistics.pdf)
@@ -322,10 +322,10 @@ def test_19_protected_report_downloads(client, viewer_headers, dispatcher_header
     # 1. Unauthenticated -> 401
     assert client.get('/api/reports/deliveries.pdf').status_code == 401
 
-    # 2. Operational reports (deliveries.pdf) -> Dispatcher only
+    # 2. Operational reports (deliveries.pdf) -> Admin and Dispatcher
     assert client.get('/api/reports/deliveries.pdf', headers=dispatcher_headers).status_code == 200
     assert client.get('/api/reports/deliveries.pdf', headers=viewer_headers).status_code == 403
-    assert client.get('/api/reports/deliveries.pdf', headers=admin_headers).status_code == 403
+    assert client.get('/api/reports/deliveries.pdf', headers=admin_headers).status_code == 200
 
     # 3. System reports (cloud.pdf) -> Admin only
     assert client.get('/api/reports/cloud.pdf', headers=admin_headers).status_code == 200
@@ -489,4 +489,3 @@ def test_my_parcels_csv_export_isolation(client, dispatcher_headers, viewer_head
     assert "Alien CSV Parcel" not in csv_text
     assert "Driver" not in csv_text
     assert "Weight" not in csv_text
-

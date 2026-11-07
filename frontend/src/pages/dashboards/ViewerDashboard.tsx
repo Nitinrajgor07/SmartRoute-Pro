@@ -20,6 +20,7 @@ import { myService, reportsService } from '../../services/api';
 import type { CustomerParcel } from '../../services/api';
 import { useAuth } from '../../app/AuthContext';
 import { AddParcelModal } from './AddParcelModal';
+import { formatINR } from '../../utils/formatINR';
 
 export const ViewerDashboard: React.FC = () => {
   const [parcels, setParcels] = useState<CustomerParcel[]>([]);
@@ -285,6 +286,12 @@ export const ViewerDashboard: React.FC = () => {
                         <span>Estimated: {parcel.estimated_delivery_time}</span>
                       </div>
                     )}
+                    <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
+                      <span>Saved price</span>
+                      <span className="font-semibold text-slate-800 dark:text-slate-200">
+                        {parcel.price != null ? formatINR(parcel.price) : 'Unavailable'}
+                      </span>
+                    </div>
                   </div>
                 </div>
 
@@ -345,6 +352,12 @@ export const ViewerDashboard: React.FC = () => {
                 <span className="text-slate-400">Destination</span>
                 <span className="font-medium text-slate-800 dark:text-slate-200">
                   {selectedParcel.to || 'Destination Hub'}
+                </span>
+              </div>
+              <div className="flex justify-between py-1 border-b border-slate-100 dark:border-slate-800/80">
+                <span className="text-slate-400">Saved Price</span>
+                <span className="font-semibold text-slate-800 dark:text-slate-200">
+                  {selectedParcel.price != null ? formatINR(selectedParcel.price) : 'Unavailable'}
                 </span>
               </div>
               {selectedParcel.estimated_delivery_time && (

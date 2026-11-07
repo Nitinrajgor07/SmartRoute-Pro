@@ -152,6 +152,27 @@ def test_12_pearson_correlation():
     assert res["slope"] == 2.0
     assert res["intercept"] == 0.0
 
+
+def test_correlation_zero_is_reported_and_significance_matches_p_value():
+    res = DescriptiveStatisticsEngine.compute_bivariate_regression(
+        [1.0, 2.0, 3.0, 4.0, 5.0],
+        [1.0, -1.0, 1.0, -1.0, 1.0],
+    )
+
+    assert res["has_sufficient_data"] is True
+    assert res["correlation"] == pytest.approx(0.0)
+    assert res["p_value"] == pytest.approx(1.0)
+
+
+def test_regression_discards_non_finite_pairs():
+    res = DescriptiveStatisticsEngine.compute_bivariate_regression(
+        [1.0, float("inf"), 3.0, 4.0],
+        [2.0, 4.0, float("nan"), 8.0],
+    )
+
+    assert res["sample_size"] == 2
+    assert res["has_sufficient_data"] is False
+
 # 13. Linear regression
 def test_13_linear_regression():
     x = [2.0, 4.0, 6.0, 8.0]

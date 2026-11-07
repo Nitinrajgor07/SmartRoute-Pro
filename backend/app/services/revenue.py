@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import datetime
+import math
 from decimal import Decimal, ROUND_HALF_UP
 from typing import Any
 
@@ -10,6 +11,9 @@ def _to_decimal(val: Any) -> Decimal:
     if val is None:
         return Decimal("0.00")
     try:
+        number = float(val)
+        if not math.isfinite(number) or number <= 0:
+            return Decimal("0.00")
         return Decimal(str(val))
     except Exception:
         return Decimal("0.00")
@@ -49,9 +53,17 @@ def calculate_revenue_periods(
     week_count = 0
     month_count = 0
     all_time_count = 0
+    seen_ids: set[Any] = set()
 
     for row in delivered_rows:
         price = _to_decimal(row.get("price"))
+        row_id = row.get("id", row.get("tracking_number"))
+        if row_id is not None:
+            if row_id in seen_ids:
+                continue
+            seen_ids.add(row_id)
+        if price <= 0:
+            continue
         all_time_rev += price
         all_time_count += 1
 
@@ -80,7 +92,13 @@ def calculate_revenue_periods(
             month_count += 1
 
     awaiting_rev = Decimal("0.00")
+    awaiting_ids: set[Any] = set()
     for row in awaiting_rows:
+        row_id = row.get("id", row.get("tracking_number"))
+        if row_id is not None:
+            if row_id in awaiting_ids:
+                continue
+            awaiting_ids.add(row_id)
         awaiting_rev += _to_decimal(row.get("price"))
 
     return {
@@ -126,11 +144,20 @@ def calculate_revenue_breakdown(
 
     total_parcels = 0
     total_rev_dec = Decimal("0.00")
+    seen_ids: set[Any] = set()
 
     for row in delivered_rows:
+        row_id = row.get("id", row.get("tracking_number"))
+        if row_id is not None and row_id in seen_ids:
+            continue
         del_at = row.get("delivered_at")
         if del_at is None:
             continue
+        price_dec = _to_decimal(row.get("price"))
+        if price_dec <= 0:
+            continue
+        if row_id is not None:
+            seen_ids.add(row_id)
 
         if del_at.tzinfo is None:
             del_at_utc = del_at.replace(tzinfo=datetime.timezone.utc)
@@ -141,7 +168,6 @@ def calculate_revenue_breakdown(
         del_date = del_at_app.date()
 
         if start_date <= del_date <= end_date:
-            price_dec = _to_decimal(row.get("price"))
             daily_map[del_date]["revenue_dec"] += price_dec
             daily_map[del_date]["parcels"] += 1
 

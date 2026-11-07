@@ -89,6 +89,26 @@ def test_revenue_periods_exclude_cancelled_and_viewers():
     assert client.get("/api/dashboard/revenue", headers=viewer).status_code == 403
 
 
+def test_revenue_ignores_invalid_prices_and_duplicate_saved_ids():
+    from app.services.revenue import calculate_revenue_periods
+
+    now = datetime.datetime(2026, 10, 21, 12, 0, tzinfo=datetime.timezone.utc)
+    rows = [
+        {"id": 10, "price": 50, "delivered_at": now},
+        {"id": 10, "price": 50, "delivered_at": now},
+        {"id": 11, "price": None, "delivered_at": now},
+        {"id": 12, "price": 0, "delivered_at": now},
+        {"id": 13, "price": -75, "delivered_at": now},
+    ]
+    result = calculate_revenue_periods(rows, [], now, datetime.timezone.utc)
+
+    assert result["today"] == 50.0
+    assert result["week"] == 50.0
+    assert result["month"] == 50.0
+    assert result["all_time"] == 50.0
+    assert result["delivered_parcels"]["all_time"] == 1
+
+
 def test_seed_prices_all_60_parcels_deterministically():
     application = _app()
     with application.app_context():

@@ -17,7 +17,7 @@ PERMISSION_ROLES = {
     'zones:run': ['DISPATCHER'],
     'analytics:read': ['ADMIN', 'DISPATCHER'],
     'reports:analytics': ['ADMIN', 'DISPATCHER'],
-    'reports:operational': ['DISPATCHER'],  # Delivery, Route, Zones reports
+    'reports:operational': ['ADMIN', 'DISPATCHER'],  # Delivery, Route, Zones reports
     'reports:system': ['ADMIN'],            # System Status report, Full Summary
     'system:read': ['ADMIN'],
     'users:manage': ['ADMIN'],

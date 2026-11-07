@@ -27,11 +27,11 @@ def _revenue_periods():
     )
 
     delivered_rows = [
-        {"price": p.price, "delivered_at": p.delivered_at, "priority": p.priority}
+        {"id": p.id, "price": p.price, "delivered_at": p.delivered_at, "priority": p.priority}
         for p in delivered
     ]
     awaiting_rows = [
-        {"price": p.price}
+        {"id": p.id, "price": p.price}
         for p in awaiting
     ]
 
@@ -242,7 +242,7 @@ def get_revenue_breakdown():
         .all()
     )
     delivered_rows = [
-        {"price": p.price, "delivered_at": p.delivered_at, "priority": p.priority}
+        {"id": p.id, "price": p.price, "delivered_at": p.delivered_at, "priority": p.priority}
         for p in delivered
     ]
 
