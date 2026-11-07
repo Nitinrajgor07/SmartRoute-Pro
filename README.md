@@ -24,7 +24,7 @@
 
 ## 📋 Executive Overview
 
-**SmartRoute Pro** is a modern full-stack web application designed for transport coordinators, fleet dispatchers, logistics analysts, and operations executives. It tackles real-world logistics challenges by unifying **advanced graph-theoretic routing algorithms**, **machine-learning geospatial clustering**, **dynamic rate-based parcel pricing**, and **inferential statistical telemetry** into a unified, responsive dashboard.
+**SmartRoute Pro** is a modern full-stack web application designed for transport coordinators, fleet dispatchers, logistics analysts, and operations executives. It tackles real-world logistics challenges by unifying **advanced graph-theoretic routing algorithms**, **machine-learning geospatial clustering**, **dynamic rate-based parcel pricing**, and **inferential statistical telemetry** into an interactive, responsive dashboard.
 
 ### Core Value Propositions
 * **Algorithmic Route Optimization**: Computes single-source shortest paths via Dijkstra's Algorithm and multi-stop vehicle itineraries via Traveling Salesperson Problem (TSP) solvers with live arrival time projections.
@@ -41,6 +41,8 @@ SmartRoute Pro implements an enterprise **Three-Tier Architecture** ensuring hig
 <div align="center">
 
 ![System Architecture Diagram](docs/images/system_architecture_diagram.jpg)
+
+*Three-Tier Software Architecture & End-to-End System Flow*
 
 </div>
 
@@ -126,6 +128,8 @@ The routing engine provides mathematical route resolution across connected hub n
 
 ![Route Optimization UI](docs/screenshots/04_route_optimization_ada.png)
 
+*Route Planner Interface with Interactive Leaflet Map and Waypoint Sequence*
+
 </div>
 
 ---
@@ -138,9 +142,17 @@ Logistics networks require optimal partitioning of geographical waypoints into m
 
 <div align="center">
 
-![Spatial Cluster Analysis](docs/screenshots/05_cluster_analysis_map.png)
+![Geospatial Clustering Infographic](docs/images/spatial_clustering_territory.jpg)
 
-*Geospatial Hub Clustering with Zone Partitions, Inertia Metrics, and Centroid Telemetry*
+*Geospatial Clustering Workflow: Input Coordinates, K-Means & DBSCAN Partitioning, and Regional Territory Maps*
+
+</div>
+
+<div align="center">
+
+![Spatial Cluster Analysis UI](docs/screenshots/05_cluster_analysis_map.png)
+
+*Interactive Zone Map showing Hub Clusters, Silhouette Metrics, and Centroids*
 
 </div>
 
@@ -160,7 +172,15 @@ End-to-end package tracking, dynamic weight-based pricing, and financial metrics
 
 <div align="center">
 
-![Consignment Management](docs/screenshots/03_delivery_management.png)
+![Consignment Lifecycle Infographic](docs/images/consignment_workflow_lifecycle.jpg)
+
+*Parcel Consignment Lifecycle: Booking, Dynamic Pricing, Route Dispatch, Fleet Tracking, and Revenue Settlement*
+
+</div>
+
+<div align="center">
+
+![Consignment Management UI](docs/screenshots/03_delivery_management.png)
 
 *Consignment Management Table with Dynamic Price Column, Priority Filters, and Search*
 
@@ -180,9 +200,17 @@ A comprehensive analytical suite giving operations managers empirical insights i
 
 <div align="center">
 
-![Statistical Analytics](docs/screenshots/06_statistical_analytics_sda.png)
+![Statistical Analysis Infographic](docs/images/statistical_hypothesis_testing.jpg)
 
-*Statistical Telemetry: Volume Distributions, Regression Scatter Plots, and Hypothesis Tests*
+*Statistical Analytics & Hypothesis Testing: Distributions, OLS Linear Regression, Student's t-test, and ANOVA Tests*
+
+</div>
+
+<div align="center">
+
+![Statistical Analytics UI](docs/screenshots/06_statistical_analytics_sda.png)
+
+*Statistical Analytics Dashboard: Volumes, Regression Fit Line, and Hypothesis Test Cards*
 
 </div>
 
@@ -207,7 +235,9 @@ Enterprise reporting service powered by ReportLab:
 
 <div align="center">
 
-![Reports Catalog](docs/screenshots/08_reports_catalog.png)
+![Reports Catalog UI](docs/screenshots/08_reports_catalog.png)
+
+*Reports Center for Downloading System Audits, Consignment Logs, and Statistical Dossiers*
 
 </div>
 
@@ -293,7 +323,7 @@ SmartRoute-Pro/
 │   ├── tailwind.config.js        # Tailwind CSS theme & plugin configurations
 │   └── vite.config.ts            # Vite bundler, proxy & build configurations
 ├── docs/                         # Comprehensive Engineering Documentation
-│   ├── images/                   # High-resolution architectural diagrams & banners
+│   ├── images/                   # High-resolution architectural diagrams, infographics & banners
 │   ├── screenshots/              # System interface screenshots across all modules
 │   ├── ADA.md                    # Analysis & Design of Algorithms (Dijkstra, TSP, Benchmarks)
 │   ├── API.md                    # Complete REST API Specification & Endpoint Schema
